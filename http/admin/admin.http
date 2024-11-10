@@ -1,0 +1,31 @@
+
+### CREATE IP RULE
+POST http://localhost:8080/admin/ip-rule
+Content-Type: application/json
+
+{
+  "ip": "123.456.789.012",
+  "max_request": 100,
+  "expires_in": "10s"
+}
+
+### GET BY IP
+GET http://localhost:8080/admin/ip-rule/123.456.789.012
+Content-Type: application/json
+Accept: application/json
+
+### DELETE BY ID
+DELETE http://localhost:8080/admin/ip-rule/78af0079-e4e2-490a-950e-ac27b00404a3
+Content-Type: application/json
+Accept: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/admin/ip-rule/737be381-64c2-4cb0-aeb5-f0e8128579c8
+Content-Type: application/json
+Accept: application/json
+
+{
+  "ip": "123.456.789.123",
+  "max_request": 123,
+  "expires_in": "123s"
+}

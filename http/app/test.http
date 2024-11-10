@@ -1,0 +1,7 @@
+GET http://localhost:8080/hello
+API_KEY: YOUR_API_KEY
+
+###
+
+GET http://localhost:8080/bye
+API_KEY: YOUR_API_KEY
