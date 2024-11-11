@@ -30,6 +30,6 @@ func (d *deleteIPRuleHandler) Handle(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"message": "IP Rule deleted",
+		"message": "Ip Rule deleted",
 	})
 }

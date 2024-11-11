@@ -25,10 +25,10 @@ func NewRateLimiter(maximumLimitRequestPerSecond int32, limitedByIP bool, limite
 func (r *RateLimiter) CheckRateLimit(ip, token string) {
 	fmt.Println("Checking rate limit")
 	fmt.Println("Maximum limit request per second: ", r.MaximumLimitRequestPerSecond)
-	fmt.Println("Limited by IP: ", r.LimitedByIP)
+	fmt.Println("Limited by Token: ", r.LimitedByIP)
 	fmt.Println("Limited by token: ", r.LimitedByToken)
 	fmt.Println("Expires in: ", r.ExpiresIn)
 
-	fmt.Println("IP: ", ip)
+	fmt.Println("Token: ", ip)
 	fmt.Println("Token: ", token)
 }

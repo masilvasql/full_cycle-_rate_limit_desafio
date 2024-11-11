@@ -33,6 +33,6 @@ func (c *createIpRuleHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{"message": "IP Rule created"})
+	ctx.JSON(200, gin.H{"message": "Ip Rule created"})
 
 }

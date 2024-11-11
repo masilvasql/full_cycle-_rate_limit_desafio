@@ -7,11 +7,14 @@ import (
 	"github.com/masilvasql/go-rate-limiter/config"
 	"github.com/masilvasql/go-rate-limiter/internal/adapters/middleware"
 	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/admin/handlers/ip_handlers"
+	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/admin/handlers/token_handlers"
 	app "github.com/masilvasql/go-rate-limiter/internal/infrastructure/app/handlers"
 	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis"
 	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis/ip_repository"
+	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis/token_repository"
 	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/middlewares"
 	"github.com/masilvasql/go-rate-limiter/internal/usecase/ip/ip_usecase"
+	"github.com/masilvasql/go-rate-limiter/internal/usecase/token/token_usecase"
 	"github.com/masilvasql/go-rate-limiter/pkg"
 )
 
@@ -57,12 +60,37 @@ func main() {
 	updateRuleUsecase := ip_usecase.NewUpdateIpRulesByIdUseCase(*ipRepository)
 	updateIPRuleHandler := ip_handlers.NewUpdateIPRuleHandler(updateRuleUsecase)
 
+	tokenRepository := token_repository.NewTokenRepository(*redisDatabase)
+
+	createTokenUseCase := token_usecase.NewCreateTokenRulesUseCase(*tokenRepository)
+	createTokenRuleHandler := token_handlers.NewCreateTokenRuleHandler(createTokenUseCase)
+
+	getTokenRuleByTokenUsecase := token_usecase.NewGetTokenRulesByTokenUseCase(*tokenRepository)
+	getTokenRuleByTokenHandler := token_handlers.NewGetTokenRuleByTokenHandler(getTokenRuleByTokenUsecase)
+
+	deleteTokenRuleUseCase := token_usecase.NewDeleteTokenRulesUseCase(*tokenRepository)
+	deleteTokenRuleHandler := token_handlers.NewDeleteTokenRuleHandler(deleteTokenRuleUseCase)
+
+	updateTokenRuleUsecase := token_usecase.NewUpdateTokenRulesByIdUseCase(*tokenRepository)
+	updateTokenRuleHandler := token_handlers.NewUpdateTokenRuleHandler(updateTokenRuleUsecase)
+
 	admin := r.Group("/admin")
 	{
-		admin.POST("ip-rule", createIPRuleHandler.Handle)
-		admin.GET("ip-rule/:ip", getIpRuleByIpHandler.Handle)
-		admin.DELETE("ip-rule/:id", deleteIPRuleHandler.Handle)
-		admin.PUT("ip-rule/:id", updateIPRuleHandler.Handle)
+		ip := admin.Group("/ip")
+		{
+			ip.POST("/ip-rule", createIPRuleHandler.Handle)
+			ip.GET("/ip-rule/:ip", getIpRuleByIpHandler.Handle)
+			ip.DELETE("/ip-rule/:id", deleteIPRuleHandler.Handle)
+			ip.PUT("/ip-rule/:id", updateIPRuleHandler.Handle)
+		}
+
+		token := admin.Group("/token")
+		{
+			token.POST("/token-rule", createTokenRuleHandler.Handle)
+			token.GET("/token-rule/:token", getTokenRuleByTokenHandler.Handle)
+			token.DELETE("/token-rule/:id", deleteTokenRuleHandler.Handle)
+			token.PUT("/token-rule/:id", updateTokenRuleHandler.Handle)
+		}
 	}
 
 	fmt.Println("Server running on port: ", envConfig.ServerPort)

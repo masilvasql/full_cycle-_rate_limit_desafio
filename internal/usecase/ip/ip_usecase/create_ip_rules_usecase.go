@@ -39,7 +39,7 @@ func (c *createIpRulesUseCase) Execute(dto CreateIpRulesDTO) error {
 	}
 
 	if exists != nil {
-		return errors.New("IP already exists")
+		return errors.New("Token already exists")
 	}
 
 	return err

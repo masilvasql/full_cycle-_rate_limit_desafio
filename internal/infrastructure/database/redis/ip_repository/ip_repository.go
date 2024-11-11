@@ -24,7 +24,7 @@ func (i *IPRepository) Create(ctx context.Context, ipEntity *entity.IPEntity) er
 	err := i.redisClient.HSet(
 		ctx,
 		ipEntity.ID,
-		"IP", ipEntity.IP,
+		"Token", ipEntity.IP,
 		"MaxRequest", ipEntity.MaxRequest,
 		"ExpiresIn", ipEntity.ExpiresIn,
 		"CreatedAt", ipEntity.CreatedAt).Err()
@@ -79,7 +79,7 @@ func (i *IPRepository) GetById(ctx context.Context, id string) (*entity.IPEntity
 
 	return &entity.IPEntity{
 		ID:         id,
-		IP:         data["IP"],
+		IP:         data["Token"],
 		MaxRequest: maxRequestInt,
 		ExpiresIn:  data["ExpiresIn"],
 		CreatedAt:  timeConvertido,
@@ -90,7 +90,7 @@ func (i *IPRepository) Update(ctx context.Context, ipEntity entity.IPEntity) err
 	err := i.redisClient.HSet(
 		ctx,
 		ipEntity.ID,
-		"IP", ipEntity.IP,
+		"Token", ipEntity.IP,
 		"MaxRequest", ipEntity.MaxRequest,
 		"ExpiresIn", ipEntity.ExpiresIn).Err()
 

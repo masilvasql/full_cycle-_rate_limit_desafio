@@ -1,0 +1,31 @@
+############# TOKEN
+
+### CREATE token RULE
+POST http://localhost:8080/admin/token/token-rule
+Content-Type: application/json
+
+{
+  "max_request": 100,
+  "expires_in": "10s"
+}
+
+### GET BY TOKEN
+GET http://localhost:8080/admin/token/token-rule/7ed42fa2-6d8b-4faa-9e20-5f4f1fd52c5c
+Content-Type: application/json
+Accept: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/admin/token/token-rule/54ce2b9a-4832-441d-8489-c7b9c73cb922
+Content-Type: application/json
+Accept: application/json
+
+{
+  "max_request": 123,
+  "expires_in": "123s"
+}
+
+### DELETE BY ID
+DELETE http://localhost:8080/admin/token/token-rule/54ce2b9a-4832-441d-8489-c7b9c73cb922
+Content-Type: application/json
+Accept: application/json
+

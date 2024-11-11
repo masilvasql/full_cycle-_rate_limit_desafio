@@ -41,5 +41,5 @@ func (c *updateIPRuleHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{"message": "IP Rule updated"})
+	ctx.JSON(200, gin.H{"message": "Ip Rule updated"})
 }

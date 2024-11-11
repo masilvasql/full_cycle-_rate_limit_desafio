@@ -23,7 +23,7 @@ func (c *getIpRuleByIPHandler) Handle(ctx *gin.Context) {
 	ip := ctx.Param("ip")
 
 	if ip == "" {
-		ctx.JSON(400, gin.H{"error": "IP is required"})
+		ctx.JSON(400, gin.H{"error": "ip is required"})
 		return
 	}
 
