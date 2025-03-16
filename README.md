@@ -7,6 +7,7 @@ Descrição: O objetivo deste desafio é criar um rate limiter em Go que possa s
 1.	API_KEY: <TOKEN>
 3.	As configurações de limite do token de acesso devem se sobrepor as do IP. Ex: Se o limite por IP é de 10 req/s e a de um determinado token é de 100 req/s, o rate limiter deve utilizar as informações do token.
 Requisitos:
+
 •	O rate limiter deve poder trabalhar como um middleware que é injetado ao servidor web
 
 •	O rate limiter deve permitir a configuração do número máximo de requisições permitidas por segundo.
@@ -38,8 +39,18 @@ Dicas:
 •	Teste seu rate limiter sob diferentes condições de carga para garantir que ele funcione conforme esperado em situações de alto tráfego.
 Entrega:
 •	O código-fonte completo da implementação.
+4. 
 •	Documentação explicando como o rate limiter funciona e como ele pode ser configurado.
+
 •	Testes automatizados demonstrando a eficácia e a robustez do rate limiter.
+
 •	Utilize docker/docker-compose para que possamos realizar os testes de sua aplicação.
+
 •	O servidor web deve responder na porta 8080.
 
+_____________
+
+apache bench 
+
+IP -> ab -n 3 -c 3 -v 2 http://192.168.0.213:8081/app/hello | grep "HTTP/"
+TOKEN ->  ab -n 3 -c 3 -H "API_KEY: 007c19e4-7599-4378-a310-04d9d5f0b7c3" -v 2 http://192.168.0.213:8081/app/hello | grep "HTTP/"

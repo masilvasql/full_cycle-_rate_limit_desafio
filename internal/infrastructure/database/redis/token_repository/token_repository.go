@@ -39,6 +39,11 @@ func (i *TokenRepository) Create(ctx context.Context, tokenEntity *entity.TokenE
 		return nil, err
 	}
 
+	err = i.redisClient.SAdd(ctx, "token_keys", tokenEntity.ID).Err()
+	if err != nil {
+		return nil, err
+	}
+
 	return tokenEntity, nil
 }
 
@@ -84,6 +89,48 @@ func (i *TokenRepository) GetById(ctx context.Context, id string) (*entity.Token
 		ExpiresIn:  data["ExpiresIn"],
 		CreatedAt:  timeConvertido,
 	}, nil
+}
+
+func (i *TokenRepository) GetAll(ctx context.Context) ([]entity.TokenEntity, error) {
+	keys, err := i.redisClient.SMembers(ctx, "token_keys").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	var tokensEntity []entity.TokenEntity
+
+	for _, key := range keys {
+		tokenData, err := i.redisClient.HGetAll(ctx, key).Result()
+		if err != nil {
+			return nil, err
+		}
+
+		if len(tokenData) == 0 {
+			continue
+		}
+
+		maxRequestInt, err := strconv.Atoi(tokenData["MaxRequest"])
+		if err != nil {
+			return nil, err
+		}
+
+		timeConvertido, err := time.Parse(time.RFC3339, tokenData["CreatedAt"])
+		if err != nil {
+			return nil, err
+		}
+
+		tokens := entity.TokenEntity{
+			ID:         key,
+			Token:      tokenData["Token"],
+			MaxRequest: maxRequestInt,
+			ExpiresIn:  tokenData["ExpiresIn"],
+			CreatedAt:  timeConvertido,
+		}
+
+		tokensEntity = append(tokensEntity, tokens)
+	}
+
+	return tokensEntity, nil
 }
 
 func (i *TokenRepository) Update(ctx context.Context, tokenEntity entity.TokenEntity) error {

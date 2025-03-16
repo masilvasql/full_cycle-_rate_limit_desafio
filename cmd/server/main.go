@@ -6,16 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/masilvasql/go-rate-limiter/config"
 	"github.com/masilvasql/go-rate-limiter/internal/adapters/middleware"
-	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/admin/handlers/ip_handlers"
-	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/admin/handlers/token_handlers"
 	app "github.com/masilvasql/go-rate-limiter/internal/infrastructure/app/handlers"
-	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis"
-	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis/ip_repository"
-	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis/token_repository"
+	msClient "github.com/masilvasql/go-rate-limiter/internal/infrastructure/database/redis"
+	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/factory/ip_factory"
+	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/factory/rate_limiter_factory"
+	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/factory/token_factory"
 	"github.com/masilvasql/go-rate-limiter/internal/infrastructure/middlewares"
-	"github.com/masilvasql/go-rate-limiter/internal/usecase/ip/ip_usecase"
-	"github.com/masilvasql/go-rate-limiter/internal/usecase/token/token_usecase"
 	"github.com/masilvasql/go-rate-limiter/pkg"
+	"github.com/redis/go-redis/v9"
+	"log"
+	"os"
 )
 
 func main() {
@@ -25,7 +25,59 @@ func main() {
 		panic(errors.New("Error loading config"))
 	}
 
-	redisDatabase, err := redis.NewRedisClient(
+	redisDatabase := getRedisDatabase(envConfig)
+
+	r := gin.New()
+	f, err := os.Create("gin.log")
+	if err != nil {
+		log.Fatal(err)
+	}
+	gin.DefaultWriter = f
+	r.Use(gin.Recovery())
+
+	rateLimiter := middleware.NewRateLimiter(
+		token_factory.NewCreateTokenRepositoryFactory(redisDatabase),
+		ip_factory.NewCreateIpRepositoryFactory(redisDatabase),
+		rate_limiter_factory.NewCreateReateLimiterRepositoryFactory(redisDatabase),
+		envConfig.LimitedByIP,
+		envConfig.LimitedByToken)
+
+	client := r.Group("/app")
+	{
+		client.Use(middlewares.RateLimiter(rateLimiter))
+		client.GET("/hello", app.HelloHandler)
+		client.GET("/bye", app.ByHandler)
+	}
+
+	admin := r.Group("/admin")
+	{
+		ip := admin.Group("/ip")
+		{
+			ip.POST("/ip-rule", ip_factory.NewCreateIpRuleHandlerFactory(redisDatabase).Handle)
+			ip.GET("/ip-rule/:ip", ip_factory.NewGetIpRuleByIpHandlerFactory(redisDatabase).Handle)
+			ip.GET("/ip-rule/all", ip_factory.NewGetAllIPRulesHandlerFactory(redisDatabase).Handle)
+			ip.DELETE("/ip-rule/:id", ip_factory.NewDeleteIPRuleHandlerFactory(redisDatabase).Handle)
+			ip.PUT("/ip-rule/:id", ip_factory.NewUpdateIPRuleHandlerFactory(redisDatabase).Handle)
+		}
+
+		token := admin.Group("/token")
+		{
+			token.POST("/token-rule", token_factory.NewcreateTokenRuleHandlerFactory(redisDatabase).Handle)
+			token.GET("/token-rule/:token", token_factory.NewGetTokenRuleByTokenHandlerFactory(redisDatabase).Handle)
+			token.GET("/token-rule/all", token_factory.NewGetAllTokenHandlersFactory(redisDatabase).Handle)
+			token.DELETE("/token-rule/:id", token_factory.NewDeleteTokenRuleHandlerFactory(redisDatabase).Handle)
+			token.PUT("/token-rule/:id", token_factory.NewUpdateTokenRuleHandlerFactory(redisDatabase).Handle)
+		}
+	}
+
+	fmt.Println("Server running on port: ", envConfig.ServerPort)
+	if err := r.Run(":" + envConfig.ServerPort); err != nil {
+		panic(err)
+	}
+}
+
+func getRedisDatabase(envConfig *config.Config) *redis.Client {
+	redisDatabase, err := msClient.NewRedisClient(
 		envConfig.RedisHost,
 		envConfig.RedisPort,
 		envConfig.RedisPassword,
@@ -35,66 +87,5 @@ func main() {
 		panic(err)
 	}
 
-	r := gin.Default()
-	r.Use(gin.Recovery())
-
-	rateLimiter := middleware.NewRateLimiter(envConfig.MaximumLimitRequestPerSecond, envConfig.LimitedByIP, envConfig.LimitedByToken, envConfig.ExpiresIn)
-	client := r.Group("/app")
-	{
-		client.Use(middlewares.RateLimiter(rateLimiter))
-		client.GET("/hello", app.HelloHandler)
-		client.GET("/bye", app.ByHandler)
-	}
-
-	ipRepository := ip_repository.NewIPRepository(*redisDatabase)
-
-	createIpUseCase := ip_usecase.NewCreateIpRulesUseCase(*ipRepository)
-	createIPRuleHandler := ip_handlers.NewCreateIpRuleHandler(createIpUseCase)
-
-	getIpRuleByIpUsecase := ip_usecase.NewGetIpRulesByIpUseCase(*ipRepository)
-	getIpRuleByIpHandler := ip_handlers.NewGetIpRuleByIPHandler(getIpRuleByIpUsecase)
-
-	deleteUpRuleUseCase := ip_usecase.NewDeleteIPRulesUseCase(*ipRepository)
-	deleteIPRuleHandler := ip_handlers.NewDeleteIPRuleHandler(deleteUpRuleUseCase)
-
-	updateRuleUsecase := ip_usecase.NewUpdateIpRulesByIdUseCase(*ipRepository)
-	updateIPRuleHandler := ip_handlers.NewUpdateIPRuleHandler(updateRuleUsecase)
-
-	tokenRepository := token_repository.NewTokenRepository(*redisDatabase)
-
-	createTokenUseCase := token_usecase.NewCreateTokenRulesUseCase(*tokenRepository)
-	createTokenRuleHandler := token_handlers.NewCreateTokenRuleHandler(createTokenUseCase)
-
-	getTokenRuleByTokenUsecase := token_usecase.NewGetTokenRulesByTokenUseCase(*tokenRepository)
-	getTokenRuleByTokenHandler := token_handlers.NewGetTokenRuleByTokenHandler(getTokenRuleByTokenUsecase)
-
-	deleteTokenRuleUseCase := token_usecase.NewDeleteTokenRulesUseCase(*tokenRepository)
-	deleteTokenRuleHandler := token_handlers.NewDeleteTokenRuleHandler(deleteTokenRuleUseCase)
-
-	updateTokenRuleUsecase := token_usecase.NewUpdateTokenRulesByIdUseCase(*tokenRepository)
-	updateTokenRuleHandler := token_handlers.NewUpdateTokenRuleHandler(updateTokenRuleUsecase)
-
-	admin := r.Group("/admin")
-	{
-		ip := admin.Group("/ip")
-		{
-			ip.POST("/ip-rule", createIPRuleHandler.Handle)
-			ip.GET("/ip-rule/:ip", getIpRuleByIpHandler.Handle)
-			ip.DELETE("/ip-rule/:id", deleteIPRuleHandler.Handle)
-			ip.PUT("/ip-rule/:id", updateIPRuleHandler.Handle)
-		}
-
-		token := admin.Group("/token")
-		{
-			token.POST("/token-rule", createTokenRuleHandler.Handle)
-			token.GET("/token-rule/:token", getTokenRuleByTokenHandler.Handle)
-			token.DELETE("/token-rule/:id", deleteTokenRuleHandler.Handle)
-			token.PUT("/token-rule/:id", updateTokenRuleHandler.Handle)
-		}
-	}
-
-	fmt.Println("Server running on port: ", envConfig.ServerPort)
-	if err := r.Run(":" + envConfig.ServerPort); err != nil {
-		panic(err)
-	}
+	return redisDatabase
 }

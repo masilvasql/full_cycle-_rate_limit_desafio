@@ -1,7 +1,10 @@
-GET http://localhost:8080/hello
+GET http://localhost:8081/app/hello
 API_KEY: YOUR_API_KEY
 
 ###
 
-GET http://localhost:8080/bye
+GET http://localhost:8081/app/bye
 API_KEY: YOUR_API_KEY
+
+### without API_KEY
+GET http://localhost:8081/app/bye

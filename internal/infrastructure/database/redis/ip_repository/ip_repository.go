@@ -24,7 +24,7 @@ func (i *IPRepository) Create(ctx context.Context, ipEntity *entity.IPEntity) er
 	err := i.redisClient.HSet(
 		ctx,
 		ipEntity.ID,
-		"Token", ipEntity.IP,
+		"IP", ipEntity.IP,
 		"MaxRequest", ipEntity.MaxRequest,
 		"ExpiresIn", ipEntity.ExpiresIn,
 		"CreatedAt", ipEntity.CreatedAt).Err()
@@ -39,10 +39,15 @@ func (i *IPRepository) Create(ctx context.Context, ipEntity *entity.IPEntity) er
 		return err
 	}
 
+	err = i.redisClient.SAdd(ctx, "ip_keys", ipEntity.ID).Err()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (i *IPRepository) GetByIP(ctx context.Context, ip string) (*entity.IPEntity, error) {
+func (i *IPRepository) GetKey(ctx context.Context, ip string) (*entity.IPEntity, error) {
 
 	id, err := i.redisClient.Get(ctx, "ip:"+ip).Result()
 
@@ -79,18 +84,61 @@ func (i *IPRepository) GetById(ctx context.Context, id string) (*entity.IPEntity
 
 	return &entity.IPEntity{
 		ID:         id,
-		IP:         data["Token"],
+		IP:         data["IP"],
 		MaxRequest: maxRequestInt,
 		ExpiresIn:  data["ExpiresIn"],
 		CreatedAt:  timeConvertido,
 	}, nil
 }
 
+func (i *IPRepository) GetAll(ctx context.Context) ([]entity.IPEntity, error) {
+
+	keys, err := i.redisClient.SMembers(ctx, "ip_keys").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	var ipEntities []entity.IPEntity
+
+	for _, key := range keys {
+		ipData, err := i.redisClient.HGetAll(ctx, key).Result()
+		if err != nil {
+			return nil, err
+		}
+
+		if len(ipData) == 0 {
+			continue
+		}
+
+		intMaxRequest, err := strconv.Atoi(ipData["MaxRequest"])
+		if err != nil {
+			return nil, err
+		}
+
+		timeConvertido, err := time.Parse(time.RFC3339, ipData["CreatedAt"])
+		if err != nil {
+			return nil, err
+		}
+
+		ipEntity := entity.IPEntity{
+			ID:         key,
+			IP:         ipData["IP"],
+			MaxRequest: intMaxRequest,
+			ExpiresIn:  ipData["ExpiresIn"],
+			CreatedAt:  timeConvertido,
+		}
+
+		ipEntities = append(ipEntities, ipEntity)
+	}
+
+	return ipEntities, nil
+}
+
 func (i *IPRepository) Update(ctx context.Context, ipEntity entity.IPEntity) error {
 	err := i.redisClient.HSet(
 		ctx,
 		ipEntity.ID,
-		"Token", ipEntity.IP,
+		"IP", ipEntity.IP,
 		"MaxRequest", ipEntity.MaxRequest,
 		"ExpiresIn", ipEntity.ExpiresIn).Err()
 

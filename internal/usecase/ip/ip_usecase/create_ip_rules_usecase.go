@@ -33,13 +33,13 @@ func (c *createIpRulesUseCase) Execute(dto CreateIpRulesDTO) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	exists, err := c.ipRepository.GetByIP(ctx, dto.IP)
+	exists, err := c.ipRepository.GetKey(ctx, dto.IP)
 	if err != nil && err.Error() == "ip not found" {
 		return c.ipRepository.Create(ctx, ipEntity)
 	}
 
 	if exists != nil {
-		return errors.New("Token already exists")
+		return errors.New("Ip already exists")
 	}
 
 	return err

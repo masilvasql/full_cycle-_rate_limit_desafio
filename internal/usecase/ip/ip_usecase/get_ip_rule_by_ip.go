@@ -35,7 +35,7 @@ func NewGetIpRulesByIpUseCase(ipRepository ip_repository.IPRepository) GetIpRule
 func (g *getIpRulesByIpUseCase) Execute(dto GetIpRulesByIpInputDTO) (*GetIpRulesByIpOutputDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	ipEntity, err := g.ipRepository.GetByIP(ctx, dto.IP)
+	ipEntity, err := g.ipRepository.GetKey(ctx, dto.IP)
 	if err != nil {
 		return nil, err
 	}
