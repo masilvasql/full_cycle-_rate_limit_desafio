@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 type MockIpRepository struct {
@@ -287,6 +288,97 @@ func TestCheckIPRateLimitExceededInPeriod(t *testing.T) {
 	mockIpRepo.AssertExpectations(t)
 	mockTokenRepo.AssertExpectations(t)
 	mockRateLimiterRepo.AssertExpectations(t)
+}
+
+func TestCeckIPRateLimitCanRequestAfterBan(t *testing.T) {
+	mockIpRepo := new(MockIpRepository)
+	mockTokenRepo := new(MockTokenRepository)
+	mockRateLimiterRepo := new(MockRateLimiterRepository)
+
+	rateLimiter := middleware.NewRateLimiter(mockTokenRepo, mockIpRepo, mockRateLimiterRepo, true, true)
+
+	ip := "123.1.1.1"
+
+	ipEntity := &entity.IPEntity{
+		IP:         ip,
+		MaxRequest: 2,
+		ExpiresIn:  "5s",
+		CreatedAt:  time.Now(),
+		ID:         "1",
+	}
+
+	mockIpRepo.On("GetKey", mock.Anything, ip).Return(ipEntity, nil)
+	mockRateLimiterRepo.On("FindBanKey", mock.Anything, ip).Return(false, nil)
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, ip, mock.Anything).Return(int64(0), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, ip, mock.Anything).Return(int64(1), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, ip, mock.Anything).Return(int64(2), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, ip, mock.Anything).Return(int64(0), nil).Once()
+	mockRateLimiterRepo.On("Create", mock.Anything, ip, mock.Anything).Return(nil).Times(3)
+	mockRateLimiterRepo.On("AddBanKey", mock.Anything, ip, ipEntity.ExpiresIn).Return(nil)
+
+	err := rateLimiter.CheckRateLimit(ip, "")
+	require.NoError(t, err)
+
+	err = rateLimiter.CheckRateLimit(ip, "")
+	require.NoError(t, err)
+
+	err = rateLimiter.CheckRateLimit(ip, "")
+	require.Error(t, err)
+
+	time.Sleep(6 * time.Second)
+
+	err = rateLimiter.CheckRateLimit(ip, "")
+	require.NoError(t, err)
+
+	mockIpRepo.AssertExpectations(t)
+	mockTokenRepo.AssertExpectations(t)
+	mockRateLimiterRepo.AssertExpectations(t)
+}
+
+func TestCheckTokenRateLimitCanRequestAfterBan(t *testing.T) {
+
+	mockIpRepo := new(MockIpRepository)
+	mockTokenRepo := new(MockTokenRepository)
+	mockRateLimiterRepo := new(MockRateLimiterRepository)
+
+	rateLimiter := middleware.NewRateLimiter(mockTokenRepo, mockIpRepo, mockRateLimiterRepo, true, true)
+
+	token := "some-token"
+
+	tokenEntity := &entity.TokenEntity{
+		Token:      token,
+		MaxRequest: 2,
+		ExpiresIn:  "5s",
+	}
+
+	mockTokenRepo.On("GetByToken", mock.Anything, token).Return(tokenEntity, nil)
+	mockRateLimiterRepo.On("FindBanKey", mock.Anything, token).Return(false, nil)
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, token, mock.Anything).Return(int64(0), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, token, mock.Anything).Return(int64(1), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, token, mock.Anything).Return(int64(2), nil).Once()
+	mockRateLimiterRepo.On("GetTotRequestInPeriod", mock.Anything, token, mock.Anything).Return(int64(0), nil).Once()
+	mockRateLimiterRepo.On("Create", mock.Anything, token, mock.Anything).Return(nil).Times(3)
+	mockRateLimiterRepo.On("AddBanKey", mock.Anything, token, tokenEntity.ExpiresIn).Return(nil)
+
+	err := rateLimiter.CheckRateLimit("", token)
+	require.NoError(t, err)
+
+	err = rateLimiter.CheckRateLimit("", token)
+	require.NoError(t, err)
+
+	err = rateLimiter.CheckRateLimit("", token)
+	require.Error(t, err)
+	require.Equal(t, middleware.LimitReached, err)
+
+	time.Sleep(6 * time.Second)
+
+	err = rateLimiter.CheckRateLimit("", token)
+	require.NoError(t, err)
+
+	mockIpRepo.AssertExpectations(t)
+	mockTokenRepo.AssertExpectations(t)
+	mockRateLimiterRepo.AssertExpectations(t)
+
 }
 
 func TestCheckTokenRateLimitExceededInPeriod(t *testing.T) {

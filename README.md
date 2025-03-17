@@ -1,56 +1,175 @@
-## RATE LIMITER
+### Como utilizar o projeto.
 
-Objetivo: Desenvolver um rate limiter em Go que possa ser configurado para limitar o número máximo de requisições por segundo com base em um endereço IP específico ou em um token de acesso.
-Descrição: O objetivo deste desafio é criar um rate limiter em Go que possa ser utilizado para controlar o tráfego de requisições para um serviço web. O rate limiter deve ser capaz de limitar o número de requisições com base em dois critérios:
-1.	Endereço IP: O rate limiter deve restringir o número de requisições recebidas de um único endereço IP dentro de um intervalo de tempo definido.
-2.	Token de Acesso: O rate limiter deve também poderá limitar as requisições baseadas em um token de acesso único, permitindo diferentes limites de tempo de expiração para diferentes tokens. O Token deve ser informado no header no seguinte formato:
-1.	API_KEY: <TOKEN>
-3.	As configurações de limite do token de acesso devem se sobrepor as do IP. Ex: Se o limite por IP é de 10 req/s e a de um determinado token é de 100 req/s, o rate limiter deve utilizar as informações do token.
-Requisitos:
+## 1- Definir as variáveis de ambiente no arquivo .env
 
-•	O rate limiter deve poder trabalhar como um middleware que é injetado ao servidor web
+#### Arquivo .env 
 
-•	O rate limiter deve permitir a configuração do número máximo de requisições permitidas por segundo.
+* IS_LIMITED_BY_IP: true --> Define que o middleware aceitara limitação por IP. Caso o valor for false, o middleware aceitara limitação apenas por token.
+* IS_LIMITED_BY_TOKEN: true --> Define que o middleware aceitara limitação por token. Caso o valor for false, o middleware aceitara limitação apenas por IP.
+    * Caso os dois valores sejam false, o middleware não aceitara requisições e retornará o status 415 (Não autorizado).
+* SERVER_PORT: 8080 --> Define a porta que o servidor web irá responder.
+* DRIVER: redis --> Define o driver que será utilizado para armazenar as informações de limitação. outras implementações podem ser feitas. 
 
-•	O rate limiter deve ter ter a opção de escolher o tempo de bloqueio do IP ou do Token caso a quantidade de requisições tenha sido excedida.
+* REDIS_HOST: localhost --> Define o host do Redis.
+* REDIS_PORT: 6379 --> Define a porta do Redis.
+* REDIS_PASSWORD: "" --> Define a senha do Redis.
+* REDIS_DB: 0 --> Define o banco de dados do Redis.
 
-•	As configurações de limite devem ser realizadas via variáveis de ambiente ou em um arquivo “.env” na pasta raiz.
+## 2- Cadastrando regras de limitação por IP
 
-•	Deve ser possível configurar o rate limiter tanto para limitação por IP quanto por token de acesso.
+***Para deixar mais dinâmico o projeto, foi utilizado o Redis para armazenar as informações de limitação. 
+Existem rotas administrativas para configurar o rate limiter.*** 
 
-•	O sistema deve responder adequadamente quando o limite é excedido:
+## 2.1 Configurar limitação por IP
 
-* Código HTTP: 429
-* Mensagem: you have reached the maximum number of requests or actions allowed within a certain time frame
+Deverá ser utilizada a rota */admin/ip/ip-rule* para configurar a limitação por IP.
 
-•	Todas as informações de "limiter” devem ser armazenadas e consultadas de um banco de dados Redis. Você pode utilizar docker-compose para subir o Redis.
+<b>Poderá ser utilizado o arquivo .http que se encontra em:</b> *http/admin/ip.http* 
 
-•	Crie uma “strategy” que permita trocar facilmente o Redis por outro mecanismo de persistência.
+Exemplo de requisição:
 
-•	A lógica do limiter deve estar separada do middleware.
+### CREATE IP RULE
 
-Exemplos:
-1.	**Limitação por IP**: Suponha que o rate limiter esteja configurado para permitir no máximo 5 requisições por segundo por IP. Se o IP 192.168.1.1 enviar 6 requisições em um segundo, a sexta requisição deve ser bloqueada.
+POST http://localhost:8080/admin/ip/ip-rule
 
-2.	**Limitação por Token:** Se um token abc123 tiver um limite configurado de 10 requisições por segundo e enviar 11 requisições nesse intervalo, a décima primeira deve ser bloqueada.
+Content-Type: application/json
 
-3.	Nos dois casos acima, as próximas requisições poderão ser realizadas somente quando o tempo total de expiração ocorrer. Ex: Se o tempo de expiração é de 5 minutos, determinado IP poderá realizar novas requisições somente após os 5 minutos.
-Dicas:
-•	Teste seu rate limiter sob diferentes condições de carga para garantir que ele funcione conforme esperado em situações de alto tráfego.
-Entrega:
-•	O código-fonte completo da implementação.
-4. 
-•	Documentação explicando como o rate limiter funciona e como ele pode ser configurado.
+```json
+{
+"ip": "192.168.0.213", // IP que será limitado
+"max_request": 3, // Quantidade máxima de requisições por segundo
+"expires_in": "10s" // Tempo de bloqueio do IP
+}
+```
 
-•	Testes automatizados demonstrando a eficácia e a robustez do rate limiter.
+#### Outras Rotas Administrativas de IP
+____
+GET http://localhost:8080/admin/ip/ip-rule/all
 
-•	Utilize docker/docker-compose para que possamos realizar os testes de sua aplicação.
+Content-Type: application/json
 
-•	O servidor web deve responder na porta 8080.
+Accept: application/json
 
-_____________
+____
+### GET BY IP
+GET http://localhost:8080/admin/ip/ip-rule/123.456.789.013
 
-apache bench 
+Content-Type: application/json
 
-IP -> ab -n 3 -c 3 -v 2 http://192.168.0.213:8081/app/hello | grep "HTTP/"
-TOKEN ->  ab -n 3 -c 3 -H "API_KEY: 007c19e4-7599-4378-a310-04d9d5f0b7c3" -v 2 http://192.168.0.213:8081/app/hello | grep "HTTP/"
+Accept: application/json
+
+____
+### UPDATE BY ID
+PUT http://localhost:8080/admin/ip/ip-rule/98effa60-25f1-440d-a32a-52c26565a131
+
+Content-Type: application/json
+
+Accept: application/json
+
+```json
+{
+"ip": "192.168.0.213", // IP que será limitado
+"max_request": 3,// Quantidade máxima de requisições por segundo
+"expires_in": "5s"// Tempo de bloqueio do IP
+}
+```
+
+____
+### DELETE BY ID
+DELETE http://localhost:8080/admin/ip/ip-rule/9d1f4814-7de3-4114-95be-289e4b48d6b2
+
+Content-Type: application/json
+
+Accept: application/json
+
+____________________________________________________
+## 3- Configuração por Token
+Um token independente pode ser gerado através da rota /admin/token/token-rule.
+
+<b>Poderá ser utilizado o arquivo .http que se encontra em:</b> *http/admin/token.http*
+
+Exemplo de requisição:
+
+### CREATE token RULE
+POST http://localhost:8080/admin/token/token-rule
+
+Content-Type: application/json
+
+***INPUT***
+```json
+{
+"max_request": 20, // Quantidade máxima de requisições por segundo
+"expires_in": "5s" // Tempo de bloqueio do token
+}
+```
+
+***OUTPUT***
+
+```json
+{
+  "ID": "1393eb6b-d8f1-44ac-b374-8b2239fb1a87",
+  "Token": "6bf64ec5-5eee-4d14-994f-365c929b37fb",
+  "MaxRequest": 20,
+  "ExpiresIn": "5s",
+  "CreatedAt": "2025-03-17T08:03:07.8967545-03:00"
+}
+```
+
+#### Outras Rotas Administrativas de Token
+
+### GET ALL
+
+GET http://localhost:8080/admin/ip/ip-rule/all
+
+Content-Type: application/json
+
+Accept: application/json
+
+### GET BY IP
+GET http://localhost:8080/admin/ip/ip-rule/123.456.789.013
+
+Content-Type: application/json
+
+Accept: application/json
+
+### UPDATE BY ID
+PUT http://localhost:8080/admin/ip/ip-rule/98effa60-25f1-440d-a32a-52c26565a131
+
+Content-Type: application/json
+
+Accept: application/json
+
+```json
+{
+"ip": "192.168.0.213",
+"max_request": 3,
+"expires_in": "5s"
+}
+```
+
+### DELETE BY ID
+DELETE http://localhost:8080/admin/ip/ip-rule/9d1f4814-7de3-4114-95be-289e4b48d6b2
+Content-Type: application/json
+Accept: application/json
+
+
+### 3- Testando o Rate Limiter
+
+Após as configurações, existem rotas para teste que passam pelo middleware de limitação.
+são elas:
+/app/hello 
+/app/bye
+
+Pode ser utilizado o arquivo .http que se encontra em: *http/app/test.http*
+
+### Pode ser utilizado o apache benchmark para testar a limitação.
+
+AB para teste com IP
+```shell
+ab -n 3 -c 3 -v 2 http://192.111.0.111:8080/app/hello | grep "HTTP/"
+```
+
+AB para teste com Token
+```shell
+ab -n 3 -c 3 -H "API_KEY: 007c19e4-7599-4378-a310-04d9d5f0b7c3" -v 2 http://192.111.0.111:8080/app/hello | grep "HTTP/"
+```

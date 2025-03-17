@@ -1,10 +1,11 @@
-GET http://localhost:8081/app/hello
-API_KEY: YOUR_API_KEY
+GET http://localhost:8080/app/hello
+Accept: application/json
+API_KEY: 6bf64ec5-5eee-4d14-994f-365c929b37fb
 
 ###
 
-GET http://localhost:8081/app/bye
+GET http://localhost:8080/app/bye
 API_KEY: YOUR_API_KEY
 
 ### without API_KEY
-GET http://localhost:8081/app/bye
+GET http://localhost:8080/app/bye

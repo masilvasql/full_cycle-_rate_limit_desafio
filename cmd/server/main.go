@@ -36,9 +36,9 @@ func main() {
 	r.Use(gin.Recovery())
 
 	rateLimiter := middleware.NewRateLimiter(
-		token_factory.NewCreateTokenRepositoryFactory(redisDatabase),
-		ip_factory.NewCreateIpRepositoryFactory(redisDatabase),
-		rate_limiter_factory.NewCreateReateLimiterRepositoryFactory(redisDatabase),
+		token_factory.NewCreateTokenRepositoryFactory(envConfig.Driver, redisDatabase, nil),
+		ip_factory.NewCreateIpRepositoryFactory(envConfig.Driver, redisDatabase, nil),
+		rate_limiter_factory.NewCreateReateLimiterRepositoryFactory(envConfig.Driver, redisDatabase, nil),
 		envConfig.LimitedByIP,
 		envConfig.LimitedByToken)
 
@@ -53,20 +53,20 @@ func main() {
 	{
 		ip := admin.Group("/ip")
 		{
-			ip.POST("/ip-rule", ip_factory.NewCreateIpRuleHandlerFactory(redisDatabase).Handle)
-			ip.GET("/ip-rule/:ip", ip_factory.NewGetIpRuleByIpHandlerFactory(redisDatabase).Handle)
-			ip.GET("/ip-rule/all", ip_factory.NewGetAllIPRulesHandlerFactory(redisDatabase).Handle)
-			ip.DELETE("/ip-rule/:id", ip_factory.NewDeleteIPRuleHandlerFactory(redisDatabase).Handle)
-			ip.PUT("/ip-rule/:id", ip_factory.NewUpdateIPRuleHandlerFactory(redisDatabase).Handle)
+			ip.POST("/ip-rule", ip_factory.NewCreateIpRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			ip.GET("/ip-rule/:ip", ip_factory.NewGetIpRuleByIpHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			ip.GET("/ip-rule/all", ip_factory.NewGetAllIPRulesHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			ip.DELETE("/ip-rule/:id", ip_factory.NewDeleteIPRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			ip.PUT("/ip-rule/:id", ip_factory.NewUpdateIPRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
 		}
 
 		token := admin.Group("/token")
 		{
-			token.POST("/token-rule", token_factory.NewcreateTokenRuleHandlerFactory(redisDatabase).Handle)
-			token.GET("/token-rule/:token", token_factory.NewGetTokenRuleByTokenHandlerFactory(redisDatabase).Handle)
-			token.GET("/token-rule/all", token_factory.NewGetAllTokenHandlersFactory(redisDatabase).Handle)
-			token.DELETE("/token-rule/:id", token_factory.NewDeleteTokenRuleHandlerFactory(redisDatabase).Handle)
-			token.PUT("/token-rule/:id", token_factory.NewUpdateTokenRuleHandlerFactory(redisDatabase).Handle)
+			token.POST("/token-rule", token_factory.NewcreateTokenRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			token.GET("/token-rule/:token", token_factory.NewGetTokenRuleByTokenHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			token.GET("/token-rule/all", token_factory.NewGetAllTokenHandlersFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			token.DELETE("/token-rule/:id", token_factory.NewDeleteTokenRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
+			token.PUT("/token-rule/:id", token_factory.NewUpdateTokenRuleHandlerFactory(envConfig.Driver, redisDatabase, nil).Handle)
 		}
 	}
 

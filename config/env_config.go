@@ -10,6 +10,7 @@ type Config struct {
 	RedisPort      string `mapstructure:"REDIS_PORT"`
 	RedisPassword  string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB        int    `mapstructure:"REDIS_DB"`
+	Driver         string `mapstructure:"DRIVER"`
 }
 
 func LoadConfig(envPath string) (*Config, error) {

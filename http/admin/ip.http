@@ -1,6 +1,6 @@
 
 ### CREATE IP RULE
-POST http://localhost:8081/admin/ip/ip-rule
+POST http://localhost:8080/admin/ip/ip-rule
 Content-Type: application/json
 
 {
@@ -11,17 +11,17 @@ Content-Type: application/json
 
 ### GET ALL
 
-GET http://localhost:8081/admin/ip/ip-rule/all
+GET http://localhost:8080/admin/ip/ip-rule/all
 Content-Type: application/json
 Accept: application/json
 
 ### GET BY IP
-GET http://localhost:8081/admin/ip/ip-rule/123.456.789.013
+GET http://localhost:8080/admin/ip/ip-rule/123.456.789.013
 Content-Type: application/json
 Accept: application/json
 
 ### UPDATE BY ID
-PUT http://localhost:8081/admin/ip/ip-rule/98effa60-25f1-440d-a32a-52c26565a131
+PUT http://localhost:8080/admin/ip/ip-rule/98effa60-25f1-440d-a32a-52c26565a131
 Content-Type: application/json
 Accept: application/json
 
@@ -32,7 +32,7 @@ Accept: application/json
 }
 
 ### DELETE BY ID
-DELETE http://localhost:8081/admin/ip/ip-rule/9d1f4814-7de3-4114-95be-289e4b48d6b2
+DELETE http://localhost:8080/admin/ip/ip-rule/9d1f4814-7de3-4114-95be-289e4b48d6b2
 Content-Type: application/json
 Accept: application/json
 
