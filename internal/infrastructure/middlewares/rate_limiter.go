@@ -2,9 +2,10 @@ package middlewares
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/masilvasql/go-rate-limiter/internal/adapters/middleware"
-	"sync"
 )
 
 var mu sync.Mutex // Mutex global para controlar o acesso concorrente

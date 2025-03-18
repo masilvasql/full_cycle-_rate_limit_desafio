@@ -33,6 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 	gin.DefaultWriter = f
+	gin.DefaultErrorWriter = f
 	r.Use(gin.Recovery())
 
 	rateLimiter := middleware.NewRateLimiter(

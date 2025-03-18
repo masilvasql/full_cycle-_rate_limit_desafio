@@ -6,7 +6,7 @@ Content-Type: application/json
 {
   "ip": "192.168.0.213",
   "max_request": 3,
-  "expires_in": "10s"
+  "expires_in": "5s"
 }
 
 ### GET ALL

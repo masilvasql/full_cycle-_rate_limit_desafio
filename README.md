@@ -171,5 +171,5 @@ ab -n 3 -c 3 -v 2 http://192.111.0.111:8080/app/hello | grep "HTTP/"
 
 AB para teste com Token
 ```shell
-ab -n 3 -c 3 -H "API_KEY: 007c19e4-7599-4378-a310-04d9d5f0b7c3" -v 2 http://192.111.0.111:8080/app/hello | grep "HTTP/"
+ab -n 3 -c 3 -H "API_KEY: 5df77e0d-64fd-4297-87f6-fa4f88c73718" -v 2 http://192.111.0.111:8080/app/hello | grep "HTTP/"
 ```
