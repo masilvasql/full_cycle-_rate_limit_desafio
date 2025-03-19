@@ -1,5 +1,17 @@
 ### Como utilizar o projeto.
 
+* Clonar o repositório;
+* Entrar na pasta;
+* Executar o comando: docker-compose up --build
+
+Seguir os demais passos para configurar o rate limiter.
+
+1- Definir as variáveis de ambiente no arquivo .env
+2- Cadastrando regras de limitação por IP
+2.1 Configurar limitação por IP
+3- Configuração por Token
+
+
 ## 1- Definir as variáveis de ambiente no arquivo .env
 
 #### Arquivo .env 
